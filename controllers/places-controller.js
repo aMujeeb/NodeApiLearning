@@ -2,6 +2,8 @@ const {
     v1: uuidv1,
     v4: uuidv4,
   } = require('uuid');
+
+const { validationResult } = require('express-validator'); //
 const HttpError = require('../models/http-error');
 
 let DUMMY_PLACES = [
@@ -45,7 +47,7 @@ const getPlacesByUserId = (req, res, next) => {
     if(!places || places.length === 0) {
         //if asynchronouse next() else throw
         return next(
-            new HttpError('Could Not find places for user Id', 404)
+            new HttpError('Input Errors', 422)
         );
     }
 
@@ -54,6 +56,13 @@ const getPlacesByUserId = (req, res, next) => {
 
 //Handling a post function
 const createPlace = (req, res, next) => {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return next(
+            new HttpError('Validation errors', 422)
+        );
+    }
+
     const {
         title, description, coordinates, address, creator //Object destructuring
     } = req.body;
@@ -74,6 +83,12 @@ const createPlace = (req, res, next) => {
 
 //Patch or Update function
 const updatePlaceById = (req, res, next) => {
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return next(
+            new HttpError('Validation errors', 422)
+        );
+    }
     const {
         title, description //Object destructuring
     } = req.body;
@@ -91,6 +106,11 @@ const updatePlaceById = (req, res, next) => {
 //Delete function
 const deletePlaceById = (req, res, next) => {
     const placeId = req.params.pid;
+    if(!DUMMY_PLACES.find(p => p.id === placeId)) {
+        return next(
+            new HttpError('Couldnt find a place to delete', 404)
+        );
+    }
     DUMMY_PLACES = DUMMY_PLACES.filter(p => p.id !== placeId)
 
     res.status(200).json({message : 'Deleted Place.'});

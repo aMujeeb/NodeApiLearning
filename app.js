@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const placeRoutes = require('./routes/places-route');
+const usersRoutes = require('./routes/users-route');
 const HttpError = require('./models/http-error');
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(bodyParser.json());
 //This will automatically add the payload into the body as next() regardless the API call based on endpoint it will be directed to relevent route
 
 app.use('/api/places', placeRoutes); // => /api/places/..... type requests should be forwaded
+app.use('/api/users', usersRoutes);
 
 //handle un supported routes
 app.use((req, res, next) => {
