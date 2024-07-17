@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 const placeRoutes = require('./routes/places-route');
 const usersRoutes = require('./routes/users-route');
@@ -30,4 +31,13 @@ app.use((error, req, res, next) => {
     res.json({ message: error.message || 'An unknown error occured!' }); //The error message client get to display or analyze 
 });
 
-app.listen(port);
+//Connecting to mongoose
+mongoose
+.connect('db path')
+.then(() => {
+    //If connection for the Db is successfull we start back end server
+    app.listen(port);
+})
+.catch(() => {
+    console.log('Connection failure');
+});
