@@ -33,7 +33,7 @@ app.use((error, req, res, next) => {
 
 //Connecting to mongoose
 mongoose
-.connect('db path')
+.connect('mongodb+srv://Cluster10220:Ql1nfUdqSGZ8@cluster10220.xuarksj.mongodb.net/NoteDataBase?retryWrites=true&w=majority')
 .then(() => {
     //If connection for the Db is successfull we start back end server
     app.listen(port);
