@@ -3,8 +3,9 @@ const {
     v4: uuidv4,
   } = require('uuid');
 
-  const { validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
+const User = require('../models/user');
 
 //Use express validator for validations. 3rd party libraries npm install --save express-validator
 
@@ -17,11 +18,20 @@ const DUMMY_USERS = [
     }
 ];
 
-const getUsers = (req, res, next) => {
-    res.status(200).json({ users : DUMMY_USERS });
+const getUsers = async (req, res, next) => {
+    let users;
+    try {
+        users = await User.find({ }, '-password'); //'-password' will return results objects without the password attribute
+    } catch(err) {
+        return next(
+            new HttpError('Returning Users failure', 500)
+        );
+    }
+
+    res.status(200).json({ users :  users.map(user => user.toObject({ getters: true })) });
 };
 
-const signup = (req, res, next) => {
+const signup = async (req, res, next) => {
     const errors = validationResult(req);
     if(!errors.isEmpty()) {
         return next(
@@ -29,34 +39,59 @@ const signup = (req, res, next) => {
         );
     }
     
-    const { name, email, password } = req.body;
+    const { name, email, password, places } = req.body;
 
     //Verify is Email already have
-    const hasUser = DUMMY_USERS.find(u => u.email === email);
-
-    if(hasUser) {
+    let existingUser;
+    try {
+        existingUser = await User.findOne({ email: email });
+    } catch(err) {
         return next(
-            new HttpError('User Already Exists', 422)
+            new HttpError('Sign up failure', 500)
         );
     }
 
-    const createdUser = {
-        id: uuidv1(),
-        name: name,
-        email: email,
-        password: password
-    };
+    if(existingUser) {
+        return next(
+            new HttpError('User exist.', 422)
+        );
+    }
 
-    DUMMY_USERS.push(createdUser);
+    const createdUser = new User({
+        name,
+        email,
+        image: 'https://www.dmarge.com/wp-content/uploads/2021/01/dwayne-the-rock-.jpg',
+        password,
+        places: []
+    });
 
-    res.status(201).json({ user: createdUser });
+    //DUMMY_USERS.push(createdUser);
+    try {
+        await createdUser.save();
+    } catch (err) {
+        return next(
+            new HttpError('Sign up failed..', 500)
+        );
+    }
+
+    res.status(201).json({ user: createdUser.toObject( { getters: true} ) });
 };
 
-const login = (req, res, next) => {
+const login = async (req, res, next) => {
     const { email, password } = req.body;
 
-    const identifiedUser = DUMMY_USERS.find(u => u.email === email);
-    if(!identifiedUser || identifiedUser.password !== password) {
+    //const identifiedUser = DUMMY_USERS.find(u => u.email === email);
+
+    let existingUser;
+    try {
+        existingUser = await User.findOne({ email: email });
+    } catch(err) {
+        return next(
+            new HttpError('Login In failed.', 500)
+        );
+    }
+
+    if(!existingUser || existingUser.password !== password) {
         return next(
             new HttpError('Could Not identify user, Credentials seems to be wrong', 401)
         );
